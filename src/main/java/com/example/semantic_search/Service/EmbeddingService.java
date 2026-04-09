@@ -10,15 +10,16 @@ public class EmbeddingService {
     public String getEmbedding(String text) {
         try {
 
-            ProcessBuilder processBuilder = new ProcessBuilder(
+            ProcessBuilder pb = new ProcessBuilder(
                     "python",
-                    "embedding/embedding_service.py",
+                    "embedding/rag_service.py",
+                    "embed",
                     text
             );
 
-            processBuilder.redirectErrorStream(true);
+            pb.redirectErrorStream(true);
 
-            Process process = processBuilder.start();
+            Process process = pb.start();
 
             BufferedReader reader = new BufferedReader(
                     new InputStreamReader(process.getInputStream())
@@ -28,6 +29,7 @@ public class EmbeddingService {
             String line;
 
             while ((line = reader.readLine()) != null) {
+                // Only capture embedding JSON
                 if (line.startsWith("[")) {
                     output.append(line);
                 }
@@ -36,7 +38,40 @@ public class EmbeddingService {
             return output.toString();
 
         } catch (Exception e) {
-            throw new RuntimeException("Error calling Python: " + e.getMessage());
+            throw new RuntimeException("Error generating embedding: " + e.getMessage());
+        }
+    }
+
+    public String generateAnswer(String context, String question) {
+        try {
+
+            ProcessBuilder pb = new ProcessBuilder(
+                    "python",
+                    "embedding/rag_service.py",
+                    "answer",   // 🔥 MODE
+                    context,
+                    question
+            );
+
+            pb.redirectErrorStream(true);
+
+            Process process = pb.start();
+
+            BufferedReader reader = new BufferedReader(
+                    new InputStreamReader(process.getInputStream())
+            );
+
+            StringBuilder output = new StringBuilder();
+            String line;
+
+            while ((line = reader.readLine()) != null) {
+                output.append(line);
+            }
+
+            return output.toString();
+
+        } catch (Exception e) {
+            throw new RuntimeException("Error generating answer: " + e.getMessage());
         }
     }
 }
